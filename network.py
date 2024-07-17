@@ -1,9 +1,9 @@
+from matplotlib.pylab import f
 import numpy as np
 import pandas as pd
 import matplotlib as plib
 import torch
 from torch import nn
-
 
 class Generator(nn.Module):
     def __init__(self, img_dim, z_dim):
@@ -17,8 +17,6 @@ class Generator(nn.Module):
         )
 
     def forward(self, z):
-        
-        
         return self.gen(z)
     
 class Discriminator(nn.Module):
@@ -32,15 +30,17 @@ class Discriminator(nn.Module):
           nn.Sigmoid()
       )
 
-    def forward(self, z):
-        
-        return self.disc()
+    def forward(self, img):
+        return self.disc(img)
+
     
 class GAN(nn.Module):
     def __init__(self, img_dim, z_dim):
         super().__init__()
         self.gen = Generator(img_dim, z_dim)
         self.disc = Discriminator(img_dim)
+        self.learn_rate = 3e-4
 
-    def forward(self, z):
-        return self.disc(self.gen(z))
+        self.gen_opt = torch.optim.Adam(self.gen.parameters(), lr=self.learn_rate)
+        self.disc_opt = torch.optim.Adam(self.disc.parameters(), lr=self.learn_rate)
+        self.criterion = nn.BCELoss()
