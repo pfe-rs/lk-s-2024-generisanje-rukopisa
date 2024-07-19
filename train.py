@@ -8,7 +8,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 device = 'cpu'
-learn_rate = 3e-4
+learn_rate = 3e-5
 z_dim = 32
 img_dim = 28
 batch_size = 32
