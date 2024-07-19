@@ -5,6 +5,7 @@ import os
 from network import *
 from dataset import *
 from torch.utils.tensorboard import SummaryWriter
+import pandas as pd
 
 
 device = 'cpu'
@@ -14,7 +15,11 @@ img_dim = 28
 batch_size = 32
 num_epochs = 50
 
-train_dataset = Data('english.csv', img_dim)
+df = pd.read_csv('english.csv')
+df_filtered = df[df['image_path'].str.startswith('img041-')]
+df_filtered.to_csv('e.csv', index=False)
+
+train_dataset = Data('e.csv', img_dim)
 train_dataloader = DataLoader(train_dataset, batch_size, shuffle = True)
 gan = GAN(img_dim*img_dim, z_dim).to(device)
 
@@ -58,10 +63,12 @@ for epoch in range(10, num_epochs):
             writer.add_image(f'slice_{batch_idx}_{i}', img, epoch)
 
         batch_idx += 1
-        if batch_idx % 100 == 0:
+        if batch_idx % 10 == 0:
             print(
                 f"Epoch [{epoch+1}/{num_epochs}] Batch {batch_idx}/{len(train_dataset)} \
                   Loss D: {lossD:.4f}, loss G: {lossG:.4f}"
             )
 
     torch.save(gan.state_dict(), f'model_epoch_{epoch}.pt')
+
+    print(f"Epoch [{epoch+1}] completed. \t Loss D: {lossD:.4f}, loss G: {lossG:.4f}")git ba

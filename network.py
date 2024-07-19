@@ -8,6 +8,7 @@ from torch import nn
 class Generator(nn.Module):
     def __init__(self, img_dim, z_dim):
         super().__init__()
+        self.kernel = nn.Parametar(torch.randn(broj_slova, z_dim))
         self.gen = nn.Sequential(
             nn.Linear(z_dim, 256),
             nn.LeakyReLU(0.1, True),
@@ -16,7 +17,8 @@ class Generator(nn.Module):
             nn.Tanh()
         )
 
-    def forward(self, z):
+    def forward(self, noise, slovo):
+        z = noise/2* self.kernel[slovo]
         return self.gen(z)
     
 class Discriminator(nn.Module):
