@@ -8,9 +8,10 @@ class Data(Dataset):
     def __init__(self, path_to_file, image_dim):
         self.data = pd.read_csv(path_to_file)
         self.transform = transforms.Compose([
+            #transforms.to_grayscale(),
+            transforms.Resize((image_dim, image_dim)),
             transforms.ToTensor(),
-            transforms.Normalize((0.5,), (0.5,)),
-            transforms.Resize((image_dim, image_dim))
+            transforms.Normalize(0.5, 0.5),
         ])
 
         self.images = self.data.iloc[:, 0]
