@@ -1,5 +1,6 @@
 from calendar import c
 from locale import currency
+from tkinter import LabelFrame
 from PIL import Image
 import os
 from model import *
@@ -10,6 +11,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 gen_learn_rate = 3e-4
 disc_learn_rate = 3e-4
 z_dim = 1
+z_depth = 100
 img_dim = 64
 input_channels = 1
 output_channels = 1
@@ -30,14 +32,16 @@ for epoch in range(num_epochs):
 
     for image, label in train_dataloader:
         trainer += 1
+        image = image.to(device)
+        label = label.to(device)
 
         curr_batch_size = len(image)
         ### Train Discriminator: max log(D(x)) + log(1 - D(G(z)))
         gan.disc_opt.zero_grad()
         gan.gen_opt.zero_grad()
         
-        noise = torch.randn(curr_batch_size, input_channels * 100, z_dim, z_dim).to(device)
-        noise = noise / 2 + 0.5
+        noise = torch.randn(curr_batch_size, input_channels * z_depth, z_dim, z_dim).to(device)
+        noise = scale(noise, 0.5, 0.5)
 
         fake = gan.gen(noise)
         #print(image.shape)
@@ -67,7 +71,7 @@ for epoch in range(num_epochs):
         writer.add_scalar('Loss/Discriminator', lossD.item(), epoch)
 
 
-        for i in range(fake.size(0)):
+        for i in range(curr_batch_size):
             img = fake[i]
             img = img.view(1, img_dim, img_dim)
             writer.add_image(f'slice_{batch_idx}_{i}',  img, epoch+epoch_offset)
