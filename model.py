@@ -9,13 +9,14 @@ class Generator(nn.Module):
     def __init__(self, in_channels, out_dim, device):
         self.device = device
         self.kernel_size = 4
+        self.in_channels = in_channels
         super().__init__()
         ngf = 32
+        self.embedding = nn.Embedding(1, in_channels * 50)
         #self.kernel = nn.Parametar(torch.randn(broj_slova, z_dim))
         self.gen = nn.Sequential(            
-            nn.Embedding(62, in_channels * 100),
 
-            nn.ConvTranspose2d(in_channels * 100, ngf * 8, self.kernel_size, 1, 0, bias=False),
+            nn.ConvTranspose2d(in_channels * 50, ngf * 8, self.kernel_size, 1, 0, bias=False),
             nn.BatchNorm2d(ngf * 8),
             nn.ReLU(True),
             
@@ -35,11 +36,11 @@ class Generator(nn.Module):
             nn.Tanh()
         )
 
-    def forward(self, noise):
+    def forward(self, noise, label = 0):
         #z = noise/2* self.kernel[slovo]
-        
-        
-        return self.gen(noise)
+        label = torch.tensor([len(noise), self.in_channels, 1, 1]).to(self.device)
+        label = label.view(-1, self.in_channels, 1, 1)
+        return self.gen(self.embedding(label) + noise)
         
 class Discriminator(nn.Module):
     def __init__(self, out_channels, device):
@@ -48,7 +49,6 @@ class Discriminator(nn.Module):
       super().__init__()
       ndf = 32
       self.disc = nn.Sequential(       
-            nn.Embedding(62, 1),
             
             nn.Conv2d(1, ndf, self.kernel_size, 2, 1, bias=False),
             nn.LeakyReLU(0.2, inplace=True),
@@ -87,5 +87,8 @@ class GAN(nn.Module):
         self.disc_opt = torch.optim.Adam(self.disc.parameters(), betas=(0.5, 0.999), lr=self.disc_learn_rate)
         self.criterion = nn.BCELoss()
 
-def scale(tensor, homothety_coeff, translation_coeff):
-    return tensor * homothety_coeff + translation_coeff
+    def scale(self, tensor, homothety_coeff, translation_coeff):
+        return tensor * homothety_coeff + translation_coeff
+
+    def compress(self, label):
+        return torch.tensor([ord(char) for char in label])
