@@ -13,7 +13,7 @@ class Generator(nn.Module):
         ngf = 32
         #self.kernel = nn.Parametar(torch.randn(broj_slova, z_dim))
         self.gen = nn.Sequential(            
-            nn.ConvTranspose2d(color_dim, ngf * 8, self.kernel_size, 1, 0, bias=False, device=self.device),
+            nn.ConvTranspose2d(color_dim * 100, ngf * 8, self.kernel_size, 1, 0, bias=False, device=self.device),
             nn.BatchNorm2d(ngf * 8),
             nn.ReLU(True),
             
@@ -69,10 +69,10 @@ class Discriminator(nn.Module):
 
     
 class GAN(nn.Module):
-    def __init__(self, img_dim, z_dim, glr, dlr, device):
+    def __init__(self, color_dim, out_dim, glr, dlr, device):
         super().__init__()
-        self.gen = Generator(img_dim, z_dim, device)
-        self.disc = Discriminator(img_dim, device)
+        self.gen = Generator(color_dim, out_dim, device)
+        self.disc = Discriminator(color_dim, device)
         self.gen_learn_rate = glr
         self.disc_learn_rate = dlr
         self.device = device
