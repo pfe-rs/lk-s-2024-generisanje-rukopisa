@@ -12,7 +12,7 @@ class Generator(nn.Module):
         self.in_channels = in_channels
         super().__init__()
         ngf = 32
-        self.embedding = nn.Embedding(1, in_channels * 50)
+        self.embedding = nn.Embedding(62, in_channels * 50)
         #self.kernel = nn.Parametar(torch.randn(broj_slova, z_dim))
         self.gen = nn.Sequential(            
 
@@ -36,11 +36,12 @@ class Generator(nn.Module):
             nn.Tanh()
         )
 
-    def forward(self, noise, label = 0):
-        #z = noise/2* self.kernel[slovo]
-        label = torch.tensor([len(noise), self.in_channels, 1, 1]).to(self.device)
-        label = label.view(-1, self.in_channels, 1, 1)
-        return self.gen(self.embedding(label) + noise)
+    def forward(self, noise, label):
+
+        emb_label = self.embedding(torch.tensor(label))
+        emb_label = emb_label.view(-1, self.in_channels * 50, 1, 1)
+        
+        return self.gen(emb_label + noise)
         
 class Discriminator(nn.Module):
     def __init__(self, out_channels, device):
@@ -90,5 +91,18 @@ class GAN(nn.Module):
     def scale(self, tensor, homothety_coeff, translation_coeff):
         return tensor * homothety_coeff + translation_coeff
 
-    def compress(self, label):
-        return torch.tensor([ord(char) for char in label])
+    def compress(self, labels):
+        clabels = []
+        for label in labels:
+            if(ord(label) >= 97 and ord(label) <= 122):
+                label = ord(label) - 97
+                clabels.append(label)
+            elif(ord(label) >= 65 and ord(label) <= 90):
+                label = ord(label) - 39
+                clabels.append(label)
+            else:
+                label = ord(label) + 4
+                clabels.append(label)
+
+        return clabels
+            
