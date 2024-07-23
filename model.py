@@ -78,8 +78,8 @@ class Discriminator(nn.Module):
 class GAN(nn.Module):
     def __init__(self, in_out_channels, out_dim, glr, dlr, device):
         super().__init__()
-        self.gen = Generator(in_out_channels, out_dim, device)
-        self.disc = Discriminator(in_out_channels, device)
+        self.gen = Generator(in_out_channels, out_dim, device).to(device)
+        self.disc = Discriminator(in_out_channels, device).to(device)
         self.gen_learn_rate = glr
         self.disc_learn_rate = dlr
         self.device = device
