@@ -1,13 +1,15 @@
 from calendar import c
 from locale import currency
-from tkinter import LabelFrame
 from PIL import Image
 import os
 from model import *
 from dataset import *
 from torch.utils.tensorboard import SummaryWriter
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+#print(torch.cuda.is_available())
+device = torch.device('cpu')
+
+
 gen_learn_rate = 3e-4
 disc_learn_rate = 3e-4
 z_dim = 1
@@ -15,8 +17,8 @@ z_depth = 50
 img_dim = 64
 input_channels = 1
 output_channels = 1
-batch_size = 128
-num_epochs = 500
+batch_size = 32
+num_epochs = 200
 epoch_offset = 0
 
 train_dataset = Data('english.csv', img_dim)
@@ -33,6 +35,7 @@ for epoch in range(num_epochs):
     for image, label in train_dataloader:
         trainer += 1
         image = image.to(device)
+
         #print(label)
         label = gan.compress(label)
         #print(label)
@@ -46,13 +49,13 @@ for epoch in range(num_epochs):
         noise = torch.randn(curr_batch_size, input_channels * z_depth, z_dim, z_dim)
         noise = gan.scale(noise, 1, 0.5).to(device)
 
-        fake = gan.gen(noise, label)
+        fake = gan.gen(noise, label).to(device)
        
         disc_real = gan.disc(image.view(curr_batch_size, 1, img_dim, img_dim))
         disc_fake = gan.disc(fake)
         
-        lossD_real = gan.criterion(disc_real, torch.ones_like(disc_real).to(device))
-        lossD_fake = gan.criterion(disc_fake, torch.zeros_like(disc_fake).to(device))
+        lossD_real = gan.criterion(disc_real, torch.ones_like(disc_real))
+        lossD_fake = gan.criterion(disc_fake, torch.zeros_like(disc_fake))
      
         ### Train Generator: min log(1 - D(G(z))) <-> max log(D(G(z))
         
@@ -60,11 +63,11 @@ for epoch in range(num_epochs):
         lossD.backward(retain_graph=True)
         gan.disc_opt.step()
 
-        fake = gan.gen(noise, label).to(device)
+        fake = gan.gen(noise, label)
         #print(fake.shape)
-        disc_fake = gan.disc(fake).to(device)
+        disc_fake = gan.disc(fake)
         
-        lossG = gan.criterion(disc_fake, torch.ones_like(disc_fake).to(device))
+        lossG = gan.criterion(disc_fake, torch.ones_like(disc_fake))
         lossG.backward()
         
         gan.gen_opt.step()
@@ -76,7 +79,7 @@ for epoch in range(num_epochs):
         for i in range(curr_batch_size):
             img = fake[i]
             img = img.view(output_channels, img_dim, img_dim)
-            writer.add_image(f'slice_{batch_idx}_{i}',  img, epoch+epoch_offset)
+            writer.add_image(f'label: {label[i]}',  img, global_step=epoch+epoch_offset)
 
         batch_idx += 1
         if batch_idx % 10 == 0:
