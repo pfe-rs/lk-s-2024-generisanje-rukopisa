@@ -43,16 +43,16 @@ for epoch in range(num_epochs):
         ### Train Discriminator: max log(D(x)) + log(1 - D(G(z)))
         gan.disc_opt.zero_grad()
         gan.gen_opt.zero_grad()
-        noise = torch.randn(curr_batch_size, input_channels * z_depth, z_dim, z_dim).to(device)
-        noise = gan.scale(noise, 1, 0.5)
+        noise = torch.randn(curr_batch_size, input_channels * z_depth, z_dim, z_dim)
+        noise = gan.scale(noise, 1, 0.5).to(device)
 
         fake = gan.gen(noise, label)
        
         disc_real = gan.disc(image.view(curr_batch_size, 1, img_dim, img_dim))
         disc_fake = gan.disc(fake)
         
-        lossD_real = gan.criterion(disc_real, torch.ones_like(disc_real))
-        lossD_fake = gan.criterion(disc_fake, torch.zeros_like(disc_fake))
+        lossD_real = gan.criterion(disc_real, torch.ones_like(disc_real).to(device))
+        lossD_fake = gan.criterion(disc_fake, torch.zeros_like(disc_fake).to(device))
      
         ### Train Generator: min log(1 - D(G(z))) <-> max log(D(G(z))
         
@@ -60,11 +60,11 @@ for epoch in range(num_epochs):
         lossD.backward(retain_graph=True)
         gan.disc_opt.step()
 
-        fake = gan.gen(noise, label)
+        fake = gan.gen(noise, label).to(device)
         #print(fake.shape)
-        disc_fake = gan.disc(fake)
+        disc_fake = gan.disc(fake).to(device)
         
-        lossG = gan.criterion(disc_fake, torch.ones_like(disc_fake))
+        lossG = gan.criterion(disc_fake, torch.ones_like(disc_fake).to(device))
         lossG.backward()
         
         gan.gen_opt.step()
