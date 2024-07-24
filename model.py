@@ -8,7 +8,7 @@ from torch import nn
 class Generator(nn.Module):
     def __init__(self, in_channels, out_dim, device):
         self.device = device
-        self.kernel_size = 4
+        self.kernel_size = 5
         self.in_channels = in_channels
         super().__init__()
         ngf = 32
@@ -46,7 +46,7 @@ class Generator(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self, out_channels, device):
       self.device = device
-      self.kernel_size = 4
+      self.kernel_size = 5
       super().__init__()
       ndf = 32
       self.disc = nn.Sequential(       
