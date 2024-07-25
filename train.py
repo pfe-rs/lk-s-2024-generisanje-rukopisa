@@ -2,8 +2,9 @@ from calendar import c
 from locale import currency
 from PIL import Image
 import os
-from model import *
+from gan import *
 from dataset import *
+from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 
 #print(torch.cuda.is_available())
@@ -22,7 +23,7 @@ num_epochs = 200
 epoch_offset = 0
 
 train_dataset = Data('english.csv', img_dim)
-train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True)
+train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True, num_workers=12)
 gan = GAN(input_channels, output_channels, gen_learn_rate, disc_learn_rate, device).to(device)
 writer = SummaryWriter()
 
@@ -32,17 +33,18 @@ for epoch in range(num_epochs):
     batch_idx = 0
     trainer = 0
 
-    for image, label in train_dataloader:
-        trainer += 1
+    for trainer, (image, label) in enumerate(tqdm(train_dataloader)):
         image = image.to(device)
 
         #print(label)
+        raw_label = label
         label = gan.compress(label)
         #print(label)
         label = torch.tensor(label).to(device)
 
         curr_batch_size = len(image)
         zeros = torch.zeros(curr_batch_size, dtype=torch.int32).to(device)
+        
         ### Train Discriminator: max log(D(x)) + log(1 - D(G(z)))
         gan.disc_opt.zero_grad()
         gan.gen_opt.zero_grad()
@@ -50,7 +52,7 @@ for epoch in range(num_epochs):
         noise = gan.scale(noise, 1, 0.5).to(device)
 
         fake = gan.gen(noise, label).to(device)
-       
+
         disc_real = gan.disc(image.view(curr_batch_size, 1, img_dim, img_dim))
         disc_fake = gan.disc(fake)
         
@@ -58,19 +60,21 @@ for epoch in range(num_epochs):
         lossD_fake = gan.criterion(disc_fake, torch.zeros_like(disc_fake))
      
         ### Train Generator: min log(1 - D(G(z))) <-> max log(D(G(z))
-        
         lossD = (lossD_real + lossD_fake) / 2
         lossD.backward(retain_graph=True)
         gan.disc_opt.step()
 
-        fake = gan.gen(noise, label)
+        #fake = gan.gen(noise, label) ????????????? mozda treba
         #print(fake.shape)
         disc_fake = gan.disc(fake)
+        fake = (fake + 1) / 2
+        #rec_label = gan.rec.recognize(fake)
         
         lossG = gan.criterion(disc_fake, torch.ones_like(disc_fake))
         lossG.backward()
         
         gan.gen_opt.step()
+
 
         writer.add_scalar('Loss/Generator', lossG.item(), epoch)
         writer.add_scalar('Loss/Discriminator', lossD.item(), epoch)
@@ -79,7 +83,7 @@ for epoch in range(num_epochs):
         for i in range(curr_batch_size):
             img = fake[i]
             img = img.view(output_channels, img_dim, img_dim)
-            writer.add_image(f'label: {label[i]}',  img, global_step=epoch+epoch_offset)
+            writer.add_image(f'label: {raw_label[i]}',  img, global_step=epoch+epoch_offset)
 
         batch_idx += 1
         if batch_idx % 10 == 0:
