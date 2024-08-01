@@ -3,7 +3,7 @@ from locale import currency
 from tkinter import LabelFrame
 from PIL import Image
 import os
-from model import *
+from gan import *
 from dataset import *
 from torch.utils.tensorboard import SummaryWriter
 
@@ -36,14 +36,15 @@ for epoch in range(num_epochs):
         #label = label.to(device)
 
         curr_batch_size = len(image)
+        zeros = torch.zeros(curr_batch_size, dtype=torch.int32).to(device)
         ### Train Discriminator: max log(D(x)) + log(1 - D(G(z)))
         gan.disc_opt.zero_grad()
         gan.gen_opt.zero_grad()
-        
+        #print(zeros.shape)
         noise = torch.randn(curr_batch_size, input_channels * z_depth, z_dim, z_dim).to(device)
-        noise = gan.scale(noise, 0.5, 0.5)
+        noise = gan.scale(noise, 0, 0.5)
 
-        fake = gan.gen(noise)
+        fake = gan.gen(noise, zeros)
         #print(image.shape)
         #print(f"fake {fake.shape}")
         
@@ -59,8 +60,8 @@ for epoch in range(num_epochs):
         lossD.backward(retain_graph=True)
         gan.disc_opt.step()
 
-        fake = gan.gen(noise)
-        print(fake.shape)
+        fake = gan.gen(noise, zeros)
+        #print(fake.shape)
         disc_fake = gan.disc(fake)
         
         lossG = gan.criterion(disc_fake, torch.ones_like(disc_fake))
@@ -74,7 +75,7 @@ for epoch in range(num_epochs):
         print(fake.shape)
         for i in range(curr_batch_size):
             img = fake[i]
-            img = image.view(output_channels * (z_depth + 3), img_dim, img_dim)
+            img = img.view(output_channels, img_dim, img_dim)
             writer.add_image(f'slice_{batch_idx}_{i}',  img, epoch+epoch_offset)
 
         batch_idx += 1

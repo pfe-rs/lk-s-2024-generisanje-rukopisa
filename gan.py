@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from generator import Generator
 from discriminator import Discriminator
-from recognizer import Recognizer
+#from recognizer import Recognizer
         
 
 class GAN(nn.Module):
@@ -10,7 +10,7 @@ class GAN(nn.Module):
         super().__init__()
         self.gen = Generator(in_out_channels, out_dim, device).to(device)
         self.disc = Discriminator(in_out_channels, device).to(device)
-        self.rec = Recognizer()
+        #self.rec = Recognizer()
         self.gen_learn_rate = glr
         self.disc_learn_rate = dlr
         self.device = device

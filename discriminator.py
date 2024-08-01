@@ -3,12 +3,13 @@ from torch import nn
 
 class Discriminator(nn.Module):
     def __init__(self, out_channels, device):
-      self.device = device
-      self.kernel_size = 4
-      super().__init__()
-      ndf = 32
-      self.disc = nn.Sequential(       
-            
+        self.device = device
+        self.kernel_size = 4
+        super().__init__()
+
+        ndf = 32
+        self.disc = nn.Sequential(
+
             nn.Conv2d(1, ndf, self.kernel_size, 2, 1, bias=False),
             nn.LeakyReLU(0.2, inplace=True),
 
@@ -29,7 +30,6 @@ class Discriminator(nn.Module):
 
       )
 
-    def forward(self, img):
-        return self.disc(img)
+    def forward(self, x, label):
 
-    
+        return self.disc(x)
