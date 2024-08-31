@@ -4,8 +4,9 @@ from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 from fid import FID 
 
-#print(torch.cuda.is_available())
-device = torch.device('cpu')
+print(torch.cuda.is_available())
+print(torch.cuda.current_device())
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 gen_learn_rate = 2e-3
 disc_learn_rate = 3e-4
@@ -27,11 +28,25 @@ writer = SummaryWriter()
 #gan.load_state_dict(torch.load('models/model_epoch_199.pt'))
 
 def train_model():
+    images = []
+    labels = []
+    trainers = []
+    
     prev = gan.gen.embedding.weight.data
 
-    for epoch in range(num_epochs):
+    for trainer, (image, label) in enumerate(tqdm(train_dataloader)):
+        trainers.append(trainer)
+        images.append(image)
+        labels.append(label)
 
-        for batch_idx, (image, label) in enumerate(tqdm(train_dataloader)):
+    for epoch in range(num_epochs):
+        batch_idx = 0
+
+        for i in range(len(trainers)):
+            trainer = trainers[i]
+            image = images[i]
+            label = labels[i]
+
             image = image.to(device)
 
             #print(label)
@@ -83,6 +98,7 @@ def train_model():
                 img = img.view(output_channels, img_dim, img_dim)
                 writer.add_image(f'label: {raw_label[i]}/epoch: {epoch}',  img, global_step=epoch+epoch_offset)
 
+            batch_idx += curr_batch_size
             if batch_idx % 10 == 0:
                 print(
                     f"Epoch [{epoch+1+epoch_offset}/{num_epochs+epoch_offset}] Batch {batch_idx * curr_batch_size}/{len(train_dataset)} \

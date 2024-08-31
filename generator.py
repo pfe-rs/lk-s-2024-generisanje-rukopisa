@@ -41,4 +41,4 @@ class Generator(nn.Module):
         #print('---------------------------------')
         
 
-        return self.gen(noise + emb_label)
+        return self.gen(noise/2 + emb_label*2)
